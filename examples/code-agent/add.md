@@ -1,207 +1,132 @@
-# code-agent — 意图对齐约束设计
+# code-agent — Plugin 架构决策
 
-## opencode.json 约束能力
+## 决策
 
-opencode.json 可配置以下内容（来源：opencode.ai/docs）：
+**用 Opencode Plugin 实现算法层约束**（A1-A3 + R4 + R5）。`tool.execute.before` 系统级拦截是唯一不可跳过的约束路径，A/B/C 方案依赖 prompt 遵守，不具备同等强制力。
 
-### 1. 权限控制（permission）
+## 钩子责任分配
 
-每个工具可设为 `allow`（自动运行）、`ask`（每次询问）、`deny`（禁止）。
+每个需求由唯一的主钩子负责，辅助钩子只做数据支撑：
 
-影响范围按工具划分：
+| 需求 | 主钩子 | 职责 | 是否需要持久化 |
+|------|--------|------|--------------|
+| A1 理解披露 | `tool.execute.before` | 在 `edit`/`write` 前拦截，检查理解是否已确认 | 是（`process/understanding.json`） |
+| A2 检查点 | `tool.execute.after` | `edit`/`write`/`bash` 后写入检查点文件 | 是（`process/checkpoints/`） |
+| A3 自检 | 自定义工具 | AI 调用 `submit-verification`，对照理解逐项验证 | 是（`process/verification.json`） |
+| R4 方向变更 | `experimental.session.compacting` | 注入当前任务状态到压缩 prompt | 否（运行时注入） |
+| R5 审计 | `tool.execute.after` | 归集所有工具调用记录 | 是（`process/audit.jsonl`） |
+| U1-U3 UI | 无 | ❌ 非 Plugin 能力范围 | — |
 
-| 权限键 | 控制的工具 | 支持按输入细粒度匹配 |
-|--------|-----------|-------------------|
-| `read` | 读文件 | ✅ 按文件路径 |
-| `edit` | 写、改、patch | ✅ 按文件路径 |
-| `bash` | 执行命令 | ✅ 按命令（含参数） |
-| `glob` | 文件搜索 | ✅ 按模式 |
-| `grep` | 内容搜索 | ✅ 按正则 |
-| `webfetch` | 网络请求 | ✅ 按 URL |
-| `task` | 启动子 agent | ✅ 按 agent 类型 |
-| `question` | 向用户提问 | ❌ 只能全局 |
+## 数据流
 
-例：bash 命令按模式区分权限：
-
-```json
-"permission": {
-  "bash": {
-    "*": "ask",
-    "git *": "allow",
-    "npm *": "allow",
-    "rm *": "deny"
-  }
-}
-```
-
-### 2. 自定义 agent
-
-可定义专门的 agent，指定独立提示词、模型、权限和工具集。
-
-```json
-"agent": {
-  "code-agent": {
-    "description": "执行代码任务前先确认理解",
-    "prompt": "{file:./prompts/code-agent-prompt.txt}",
-    "permission": {
-      "edit": "ask"
-    }
-  }
-}
-```
-
-agent 可通过 `.opencode/agents/` 目录下的 markdown 文件定义，文件名即 agent 名。
-
-### 3. 自定义命令（command）
-
-将重复任务固化为模板命令：
-
-```json
-"command": {
-  "plan-first": {
-    "template": "先输出你对任务的理解和计划，等确认后再执行。任务：$ARGUMENTS",
-    "description": "先计划后执行"
-  }
-}
-```
-
-### 4. 外部指令文件（instructions）
-
-可指定多个外部文件作为系统指令，支持 glob 模式：
-
-```json
-"instructions": [
-  "AGENTS.md",
-  ".opencode/rules/*.md"
-]
-```
-
-### 5. 自定义工具（tools）
-
-可全局禁用某些工具：
-
-```json
-"tools": {
-  "write": false,
-  "bash": false
-}
-```
-
-## 各机制实际约束力
-
-| 机制 | 约束力 | 实现方式 |
-|------|--------|---------|
-| permission | 高 | 工具执行前由系统阻断，不可跳过 |
-| agent 限制 | 高 | 限定工具集和行为模式，系统级 |
-| command | 中 | 模板引导，但 AI 可偏离 |
-| instructions | 中 | 作为系统指令读入，但无执行阻断 |
-| AGENTS.md | 中 | AI 读取，但违反无自动阻断 |
-| Skills | 高 | 步骤缺失工作流终止 |
-
-## 对照 PRD 需求：Opencode 默认机制够不够
-
-| PRD 需求 | Opencode 能做到的 | 做不到的 |
-|----------|-----------------|---------|
-| R1 执行前理解确认 | 可用 Plan mode（工具只读），或自定义 agent 限制编辑权限 | 无法强制"输出理解→等待确认→再执行"这个交互顺序。权限系统只能禁工具，不能规定先做什么再做什么 |
-| R2 执行中可中途纠正 | agent 可设 `steps` 限制迭代次数 | 没有内置检查点机制。`steps` 只是截断，不是有意义的暂停点 |
-| R3 交付前自检 | 无 | 没有"对照验收标准验证产出"的内置步骤 |
-| R4 方向变更保留上下文 | 会话历史已保留，agent 能看到之前说了什么 | 没有机制强制 agent 在方向变更时系统性地重新锚定理解 |
-| R5 过程可审计 | `/share` 可分享会话链接 | 没有结构化的决策日志（当时理解了什么、为什么选这个方案、中途调整了什么） |
-
-## 还需要额外做什么
-
-### 需要额外工作的
-
-| 需求 | 缺什么 | 可能的实现方式 |
-|------|--------|--------------|
-| R1 + R2 | 交互顺序约束（先理解→确认→执行→检查点→继续） | Skill 定义完整工作流步骤，强制不可跳步 |
-| R3 | 产出验证步骤 | Skill 中增加"自检"步骤，或自定义 prompt 要求交付前输出验证清单 |
-| R5 | 结构化决策日志 | 人工规范留存。Opencode 无内置能力 |
-
-### 不需要额外工作的
-
-| 需求 | 原因 |
-|------|------|
-| R4 上下文保留 | 会话历史已由 Opencode 管理，方向变更时直接利用即可 |
-
-### 总结
-
-Opencode 的 permission + agent + instructions 能解决"什么能做、什么不能做"的问题（工具级约束），但解决不了"先做什么、再做什么"的问题（流程级约束）。
-
-5 条需求中，R4 可直接利用现有机制实现，R1/R2/R3 需要流程约束（Skill 或自定义 prompt），R5 需要人工规范。
-
-核心缺口是：**Opencode 的约束机制全是"能不能"（工具权限），不是"该不该现在做"（流程编排）。** 探索性任务需要的正是后者——不是限制 AI 的能力，是规定它的工作顺序。
-
----
-
-## 跳出 Opencode：流程约束方案
-
-Opencode 没有流程编排能力。以下方案不依赖 Opencode 自身，独立实现。
-
-### 方案 A：文件系统协议
-
-用文件系统的存在/不存在作为流程状态信号。AI 通过读写约定路径的文件来推进流程。
+### 正常流程
 
 ```
-.process/
-├── understanding.md   ← AI 写入：对任务的理解
-├── confirmed.flag     ← 用户创建：确认理解，AI 可执行
-├── checkpoint-001.md  ← AI 写入：执行中状态摘要
-├── checkpoint-002.md
-├── verification.md    ← AI 写入：自检结果
-└── done.flag          ← 用户创建：验收通过
+AI 调用 submit-understanding
+    ↓
+[user 确认理解]
+    ↓
+AI 调用 edit/write
+    ↓
+tool.execute.before ──→ 读取 understanding.json，检查 confirmed
+    ├── 未确认 → throw Error，阻断
+    └── 已确认 → 放行
+             ↓
+         工具执行
+             ↓
+tool.execute.after ───→ 写入 audit.jsonl + 检查点
 ```
 
-规则：AI 在 `confirmed.flag` 出现前不能写业务文件，只能写 `understanding.md`。检查点文件存在后才能继续下一步。
-
-优点：完全透明，用户用文件管理器即可查看状态。与 asset-agent 的设计理念一致（文件系统即信号总线）。
-
-缺点：需要人工创建/删除 flag 文件。需要 AGENTS.md 或 instructions 定义规则。
-
-### 方案 B：Shell 包装器
-
-一个简单的 shell 脚本将任务拆为多阶段调用：
-
-```bash
-# phase 1: 理解
-opencode run "任务：$TASK。只输出你对任务的理解，不要执行任何操作。" > .process/understanding.md
-echo "确认理解后按 Enter..."
-read
-# phase 2: 执行
-opencode run "根据之前确认的理解执行。理解见 .process/understanding.md"
-echo "执行完成。按 Enter 进入验证..."
-read
-# phase 3: 验证
-opencode run "对照 .process/understanding.md 中的验收标准，验证产出并报告差异。"
-```
-
-优点：流程由脚本强制，不可跳步。每阶段独立调用，方向变更只需重新执行当前阶段。Opencode 本身不需要任何配置。
-
-缺点：每阶段启动新会话，上下文不连续。需要 terminal 操作。
-
-### 方案 C：混合（文件协议 + 单会话内约束）
-
-在 AGENTS.md 或 agent prompt 中定义流程规则，配合文件系统信号：
+### 方向变更流程
 
 ```
-规则：
-1. 在 .process/confirmed.flag 存在之前，只允许写 .process/understanding.md
-2. .process/understanding.md 写完后，用 question 工具让用户确认
-3. 确认后，每完成一个主要步骤，在 .process/ 下写 checkpoint 文件
-4. 所有业务文件写完后，写 .process/verification.md 对照验收标准自检
-5. 在所有 checkpoint 和 verification 完成前，不允许使用 task 工具启动子 agent
+user 说"方向不对"
+    ↓
+AI 重读 understanding.json
+    ↓
+LLM 生成新理解 → submit-understanding 覆盖旧文件
+    ↓
+user 确认 → 继续
 ```
 
-优点：单会话内完成，上下文连续。文件系统提供审计痕迹。
+### 压缩流程
 
-缺点：约束依赖 AI 遵守 prompt 规则，没有系统级阻断。
+```
+会话长度超限 → 触发压缩
+    ↓
+experimental.session.compacting ──→ 读取当前 understanding + 检查点
+    ↓
+注入到 context
+    ↓
+LLM 生成包含完整任务状态的摘要
+```
 
-### 方案对比
+## 状态设计
 
-| 维度 | A 文件协议 | B Shell 包装器 | C 混合 |
-|------|-----------|--------------|-------|
-| 流程强制力 | 中（规则约束） | 高（脚本控制） | 中（规则约束） |
-| 上下文连续性 | 连续 | 分段 | 连续 |
-| 审计痕迹 | ✅ 完整 | ❌ 每阶段独立 | ✅ 完整 |
-| 实现成本 | 低（加规则） | 中（写脚本） | 低（改 prompt） |
-| 方向变更代价 | 低（删 flag） | 低（重跑阶段） | 低（继续会话） |
+### 状态分类
+
+| 状态 | 生命周期 | 存储 | 读写方 |
+|------|---------|------|--------|
+| understanding | 跨检查点 | 文件 | AI（写），钩子（读） |
+| checkpoints | 只追加 | 文件 | 钩子（写），压缩钩子（读） |
+| audit | 只追加 | 文件 | 钩子（写） |
+| verified | 单次 | 文件 | AI（写） |
+
+### 理解确认机制
+
+理解不是"一步到位"的——user 确认前 AI 不写业务文件，但可以读文件、调 `submit-understanding` 修改理解。
+
+```
+状态机：
+理解提交（submit-understanding） → 等待确认（confirmed=false）
+    ↓ user 确认（或修改后确认）
+理解已确认（confirmed=true） → AI 可写文件
+    ↓ 方向变更
+理解被覆盖（新的 submit-understanding） → 回到等待确认
+```
+
+确认方式：`question` 工具让 user 在会话内直接确认，或 user 手动修改 `process/understanding.json` 的 `confirmed` 字段。
+
+### 检查点编号策略
+
+按自然数递增：`001.json`、`002.json`。每次 `tool.execute.after` 触发时，取当前最大序号 +1。无需清理历史。
+
+## 自定义工具
+
+提供两个自定义工具，作为 AI 与 Plugin 的协议接口：
+
+| 工具 | 调用方 | 写入 | 效果 |
+|------|--------|------|------|
+| `submit-understanding` | AI | `process/understanding.json` | 记录当前任务理解，清空 `confirmed` |
+| `submit-verification` | AI | `process/verification.json` | 记录自检结果，自动对比验收标准 |
+
+AI **不能绕过这两个工具**沟通理解——文件系统是唯一的协议通道。Plugin 不解析 AI 的对话输出，只读文件。
+
+## 压缩策略
+
+`experimental.session.compacting` 注入三段内容到压缩上下文：
+
+1. **当前理解**：`process/understanding.json` 的完整内容
+2. **最近的检查点**：最后 3 个检查点摘要
+3. **状态指示**：当前处于哪个阶段（理解/执行/验证）
+
+不注入审计日志（体积大、压缩不需要）。
+
+## 持久化策略
+
+所有持久化数据放在 `.process/` 目录下，该目录加入 `.gitignore`：
+
+| 文件 | 写入时机 | 格式 |
+|------|---------|------|
+| `understanding.json` | AI 调用 `submit-understanding` | JSON |
+| `checkpoints/001.json` | `tool.execute.after` 触发 | JSON |
+| `audit.jsonl` | `tool.execute.after` 触发 | JSONL（每行一条） |
+| `verification.json` | AI 调用 `submit-verification` | JSON |
+
+## 边界
+
+**Plugin 覆盖**：A1 理解披露、A2 检查点、A3 自检、R4 方向变更、R5 审计。
+
+**Plugin 不覆盖**：U1 理解面板、U2 进度面板、U3 审计面板。UI 需要消费 `.process/` 下的结构化数据独立实现。
+
+**协议先行**：`.process/` 数据格式是 UI 和 Plugin 的契约。Plugin 先定格式，UI 只需读文件，不需要改 Plugin。
