@@ -145,7 +145,17 @@ class OpenCodeService {
         'parts': parts,
       };
       if (includeIntent && intentDoc != null) {
-        body['system'] = intentDoc;
+        body['system'] = '''$intentDoc
+
+当你发现对话中意图发生结构性变化时（目标切换、方向调整、约束新增、阶段转换），在回复末尾附加：
+[INTENT_UPDATE]
+goal: 更新后的目标
+exploration: 更新后的探索方向
+constraints: 更新后的约束
+state: 更新后的状态
+[/INTENT_UPDATE]
+
+只包含实际发生变化的字段，未变化字段省略。变化很细微时不要触发更新。''';
       }
       final res = await _client.post(
         Uri.parse('$_baseUrl/session/$sessionId/message'),

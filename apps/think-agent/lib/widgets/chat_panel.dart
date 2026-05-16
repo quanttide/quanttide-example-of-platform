@@ -18,6 +18,10 @@ class _ChatPanelState extends State<ChatPanel> {
   String? _sessionId;
   bool _sending = false;
 
+  static const _userBubble = Color(0xFFE3F2FD);
+  static const _aiBubble = Color(0xFFF5F5F5);
+  static const _primary = Color(0xFF1A1A2E);
+
   @override
   void initState() {
     super.initState();
@@ -126,15 +130,15 @@ class _ChatPanelState extends State<ChatPanel> {
       children: [
         if (_sessionId == null)
           Container(
-            padding: const EdgeInsets.all(8),
-            color: Colors.orange[50],
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: const Color(0xFFFFF8E1),
             child: Row(
               children: [
-                Icon(Icons.info_outline, size: 14, color: Colors.orange[700]),
-                const SizedBox(width: 6),
-                Text(
+                const Icon(Icons.info_outline, size: 14, color: Color(0xFFB8860B)),
+                const SizedBox(width: 8),
+                const Text(
                   '正在连接 OpenCode serve...',
-                  style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                  style: TextStyle(fontSize: 12, color: Color(0xFF8D6E00)),
                 ),
               ],
             ),
@@ -142,65 +146,151 @@ class _ChatPanelState extends State<ChatPanel> {
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             itemCount: _messages.length,
             itemBuilder: (context, index) {
               final msg = _messages[index];
               final isUser = msg.role == 'user';
-              return Align(
-                alignment:
-                    isUser ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isUser ? Colors.blue[100] : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.7,
-                  ),
-                  child: Text(msg.content),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisAlignment:
+                      isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (!isUser) ...[
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: _primary,
+                        child: const Text('AI',
+                            style: TextStyle(
+                                fontSize: 9,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isUser ? _userBubble : _aiBubble,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: Radius.circular(isUser ? 16 : 4),
+                            bottomRight: Radius.circular(isUser ? 4 : 16),
+                          ),
+                        ),
+                        child: Text(
+                          msg.content,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: Color(0xFF1C1C1E),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (isUser) ...[
+                      const SizedBox(width: 8),
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: const Color(0xFF4FC3F7),
+                        child: const Icon(Icons.person,
+                            size: 16, color: Colors.white),
+                      ),
+                    ],
+                  ],
                 ),
               );
             },
           ),
         ),
         if (_sending)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _primary.withAlpha(100),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'AI 思考中...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _primary.withAlpha(120),
+                  ),
+                ),
+              ],
             ),
           ),
         Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(top: BorderSide(color: Colors.grey[300]!)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(10),
+                blurRadius: 4,
+                offset: const Offset(0, -1),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: TextField(
                   controller: _controller,
-                  decoration: const InputDecoration(
+                  minLines: 1,
+                  maxLines: 5,
+                  decoration: InputDecoration(
                     hintText: '输入探索内容...',
-                    border: OutlineInputBorder(),
+                    hintStyle:
+                        TextStyle(color: Colors.grey[400], fontSize: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(color: _primary, width: 1.5),
+                    ),
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     isDense: true,
                   ),
+                  style: const TextStyle(fontSize: 14),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                onPressed: _sendMessage,
-                icon: const Icon(Icons.send),
-                color: Colors.blue,
+              Container(
+                decoration: BoxDecoration(
+                  color: _primary,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: _sending ? null : _sendMessage,
+                  icon: const Icon(Icons.arrow_upward, color: Colors.white),
+                  iconSize: 18,
+                  constraints:
+                      const BoxConstraints(minWidth: 38, minHeight: 38),
+                  padding: EdgeInsets.zero,
+                ),
               ),
             ],
           ),

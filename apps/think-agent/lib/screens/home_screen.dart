@@ -15,20 +15,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   IntentModel _intentModel = IntentModel();
-  IntentFileService? _fileService;
 
   @override
   void initState() {
     super.initState();
-    _initFileService();
+    _startFileWatcher();
   }
 
-  void _initFileService() {
-    _fileService = IntentFileService(filePath: '.quanttide/intent.md');
-    _fileService!.onFileChanged = (content) {
+  void _startFileWatcher() {
+    final fileService = context.read<IntentFileService>();
+    fileService.onFileChanged = (content) {
       context.read<IntentSyncBloc>().add(AiEditFile(content));
     };
-    _fileService!.watch();
+    fileService.init();
   }
 
   void _onIntentChanged(IntentModel model) {
@@ -37,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _fileService?.dispose();
+    context.read<IntentFileService>().dispose();
     super.dispose();
   }
 
@@ -58,12 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDesktopLayout() {
     return Row(
       children: [
-        const Expanded(child: ChatPanel()),
-        Container(width: 1, color: Colors.grey[300]),
+        const Expanded(flex: 3, child: ChatPanel()),
+        Container(
+          width: 1,
+          color: Colors.black.withAlpha(26),
+        ),
         Expanded(
-          child: IntentPanel(
-            intentModel: _intentModel,
-            onChanged: _onIntentChanged,
+          flex: 2,
+          child: Container(
+            color: const Color(0xFF1A1A2E),
+            child: IntentPanel(
+              intentModel: _intentModel,
+              onChanged: _onIntentChanged,
+            ),
           ),
         ),
       ],

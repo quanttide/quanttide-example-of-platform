@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../services/intent_file_service.dart';
 import '../services/opencode_service.dart';
 
 sealed class IntentSyncState {
@@ -59,13 +60,16 @@ class UserSendMessage extends IntentSyncEvent {
 
 class IntentSyncBloc extends Bloc<IntentSyncEvent, IntentSyncState> {
   final OpenCodeService _oc;
+  final IntentFileService _file;
   Completer<void>? _syncCompleter;
   bool _isSyncing = false;
 
   IntentSyncBloc({
     required String initialDocumentContent,
+    required IntentFileService fileService,
     OpenCodeService? openCodeService,
   })  : _oc = openCodeService ?? OpenCodeService(),
+        _file = fileService,
         super(Aligned(documentContent: initialDocumentContent)) {
     on<AiEditFile>(_onAiEditFile);
     on<HumanEditSave>(_onHumanEditSave);
@@ -76,6 +80,7 @@ class IntentSyncBloc extends Bloc<IntentSyncEvent, IntentSyncState> {
 
   void _onAiEditFile(AiEditFile event, Emitter<IntentSyncState> emit) {
     final newContent = event.newContent;
+    _file.writeContent(newContent);
     switch (state) {
       case Aligned():
         emit(AiDrift(
@@ -105,6 +110,7 @@ class IntentSyncBloc extends Bloc<IntentSyncEvent, IntentSyncState> {
       documentContent: event.newContent,
       lastApprovedContent: previousApproved,
     ));
+    _file.writeContent(event.newContent);
     _startImplicitSync(event.newContent);
   }
 

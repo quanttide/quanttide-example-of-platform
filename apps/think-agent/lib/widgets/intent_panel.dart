@@ -19,6 +19,11 @@ class _IntentPanelState extends State<IntentPanel> {
   late IntentModel _model;
   late Map<String, TextEditingController> _controllers;
 
+  static const _darkCard = Color(0xFF16213E);
+  static const _darkText = Color(0xFFE8E8E8);
+  static const _darkLabel = Color(0xFF8E8E9A);
+  static const _accent = Color(0xFF4FC3F7);
+
   @override
   void initState() {
     super.initState();
@@ -72,36 +77,62 @@ class _IntentPanelState extends State<IntentPanel> {
     final brd = _model.toMarkdown();
     Clipboard.setData(ClipboardData(text: brd));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('BRD 已复制到剪贴板')),
+      SnackBar(
+        content: const Text('BRD 已复制到剪贴板'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: _darkCard,
+      ),
     );
   }
 
-  Widget _buildField(String label, String key, {int maxLines = 4}) {
+  Widget _buildField(String label, IconData icon, String key,
+      {int maxLines = 4}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 6),
+            child: Row(
+              children: [
+                Icon(icon, size: 13, color: _accent),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _darkLabel,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          TextField(
-            controller: _controllers[key]!,
-            maxLines: maxLines,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              isDense: true,
+          Container(
+            decoration: BoxDecoration(
+              color: _darkCard,
+              borderRadius: BorderRadius.circular(8),
             ),
-            style: const TextStyle(fontSize: 13),
-            onChanged: (_) => _onFieldChanged(key),
+            child: TextField(
+              controller: _controllers[key]!,
+              maxLines: maxLines,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                isDense: true,
+                hintText: label,
+                hintStyle: TextStyle(color: _darkLabel.withAlpha(100)),
+              ),
+              style: const TextStyle(
+                fontSize: 13,
+                color: _darkText,
+                height: 1.5,
+              ),
+              onChanged: (_) => _onFieldChanged(key),
+            ),
           ),
         ],
       ),
@@ -113,42 +144,67 @@ class _IntentPanelState extends State<IntentPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(
             children: [
+              Container(
+                width: 3,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: _accent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
               const Text(
                 '意图模型',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: _darkText,
+                  letterSpacing: 0.3,
+                ),
               ),
               const Spacer(),
               Text(
-                '最后更新: ${_formatTime(_model.updatedAt)}',
-                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                _formatTime(_model.updatedAt),
+                style: TextStyle(fontSize: 11, color: _darkLabel),
               ),
             ],
           ),
         ),
-        const Divider(),
+        const SizedBox(height: 4),
+        Divider(color: _darkLabel.withAlpha(40), height: 1),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             children: [
-              _buildField('目标', 'goal'),
-              _buildField('当前探索', 'exploration', maxLines: 6),
-              _buildField('约束', 'constraints', maxLines: 4),
-              _buildField('状态', 'state'),
+              _buildField('目标', Icons.flag_outlined, 'goal'),
+              _buildField('当前探索', Icons.explore_outlined, 'exploration',
+                  maxLines: 6),
+              _buildField('约束', Icons.border_style, 'constraints',
+                  maxLines: 4),
+              _buildField('状态', Icons.circle_outlined, 'state'),
             ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _exportBrd,
-              icon: const Icon(Icons.file_copy, size: 16),
+              icon: const Icon(Icons.file_copy, size: 15),
               label: const Text('导出 BRD'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _accent,
+                side: BorderSide(color: _accent.withAlpha(80)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
             ),
           ),
         ),
