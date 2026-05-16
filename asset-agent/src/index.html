@@ -3,174 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>asset-agent · 整合看板</title>
+    <title>asset-agent · 多智能体协作质量管理</title>
     <style>
-        :root {
-            --bg: #1e1e2e; --surface: #282840; --text: #cdd6f4;
-            --subtle: #a6adc8; --border: #45475a; --accent: #89b4fa;
-            --green: #a6e3a1; --orange: #fab387; --red: #f38ba8;
-            --font: system-ui, -apple-system, sans-serif;
-        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: var(--bg); color: var(--text); font-family: var(--font);
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0f0f1a; color: #cdd6f4;
             min-height: 100vh; display: flex; flex-direction: column;
+            line-height: 1.6;
         }
-        .topbar {
-            display: flex; align-items: center; padding: 12px 24px;
-            background: var(--surface); border-bottom: 1px solid var(--border);
+        .top {
+            padding: 24px 32px; border-bottom: 1px solid #1e1e2e;
+            display: flex; align-items: center; gap: 12px;
         }
-        .topbar h1 { font-size: 18px; font-weight: 700; margin-right: 12px; }
-        .topbar .tag {
-            font-size: 11px; background: #45475a; padding: 2px 10px;
-            border-radius: 4px; color: var(--subtle);
+        .top h1 { font-size: 16px; font-weight: 600; }
+        .top .badge {
+            font-size: 10px; background: #1e1e2e; color: #a6adc8;
+            padding: 2px 10px; border-radius: 4px;
         }
-        .main { flex: 1; max-width: 960px; margin: 0 auto; padding: 32px 24px; width: 100%; }
+        .main { flex: 1; max-width: 720px; margin: 0 auto; padding: 48px 24px; width: 100%; }
 
-        .hero { margin-bottom: 40px; }
-        .hero p { color: var(--subtle); font-size: 15px; line-height: 1.7; margin-top: 8px; }
+        .intro { margin-bottom: 48px; }
+        .intro h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+        .intro p { color: #a6adc8; font-size: 15px; }
+        .intro .count {
+            display: flex; gap: 24px; margin-top: 20px;
+            font-size: 13px; color: #585b70;
+        }
+        .intro .count span { color: #cdd6f4; font-weight: 600; }
 
-        .section-title {
-            font-size: 13px; font-weight: 600; color: var(--subtle);
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
+        .views { display: flex; flex-direction: column; gap: 16px; margin-bottom: 48px; }
+        .view {
+            display: flex; align-items: center; gap: 20px;
+            padding: 20px 24px; background: #1a1a2e; border: 1px solid #1e1e2e;
+            border-radius: 8px; text-decoration: none; color: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .view:hover { background: #22223a; border-color: #89b4fa; }
+        .view .icon { font-size: 28px; width: 48px; text-align: center; flex-shrink: 0; }
+        .view .body { flex: 1; }
+        .view .body h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .view .body p { font-size: 13px; color: #a6adc8; }
+        .view .arrow { color: #585b70; font-size: 18px; }
+        .view .status {
+            font-size: 10px; padding: 2px 8px; border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .status-done { background: #1a3a2a; color: #a6e3a1; }
+
+        .section-label {
+            font-size: 11px; font-weight: 600; color: #585b70;
+            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;
         }
 
-        .views { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
-        .view-card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 8px; padding: 20px;
-        }
-        .view-card .status {
-            display: inline-block; font-size: 10px; padding: 2px 8px;
-            border-radius: 3px; margin-bottom: 12px;
-        }
-        .status.done { background: #1a3a2a; color: var(--green); }
-        .status.design { background: #3a2a1a; color: var(--orange); }
-        .status.todo { background: #3a1a1a; color: var(--red); }
-        .view-card h3 { font-size: 15px; margin-bottom: 8px; }
-        .view-card p { font-size: 13px; color: var(--subtle); line-height: 1.6; }
-        .view-card .source { font-size: 11px; color: #585b70; margin-top: 12px; }
-
-        .arch { margin-bottom: 40px; }
-        .arch pre {
-            background: #11111b; border: 1px solid var(--border);
-            border-radius: 6px; padding: 20px; font-size: 13px;
-            line-height: 1.8; overflow-x: auto; color: var(--subtle);
-        }
-        .arch pre .hl { color: var(--accent); }
-        .arch pre .g { color: var(--green); }
-        .arch pre .o { color: var(--orange); }
-
-        .gaps { margin-bottom: 40px; }
-        .gap-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .gap-table th {
-            text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border);
-            color: var(--subtle); font-weight: 600;
-        }
-        .gap-table td {
-            padding: 10px 12px; border-bottom: 1px solid #313244;
-        }
-        .gap-table .yes { color: var(--green); }
-        .gap-table .no { color: var(--red); }
-        .gap-table .wip { color: var(--orange); }
-
-        .principles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 40px; }
+        .principles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 48px; }
         .principle {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 6px; padding: 14px 16px;
+            background: #1a1a2e; border: 1px solid #1e1e2e;
+            border-radius: 6px; padding: 16px;
         }
-        .principle .num {
-            font-size: 11px; color: #585b70; font-weight: 700; margin-bottom: 4px;
-        }
+        .principle .n { font-size: 11px; color: #585b70; font-weight: 700; margin-bottom: 4px; }
         .principle p { font-size: 13px; line-height: 1.5; }
 
-        .nav-links { display: flex; gap: 12px; }
-        .nav-links a {
-            display: block; padding: 10px 20px; background: var(--surface);
-            border: 1px solid var(--border); border-radius: 6px;
-            color: var(--accent); text-decoration: none; font-size: 13px;
-            transition: background 0.15s;
+        .bottom {
+            border-top: 1px solid #1e1e2e; padding: 24px 32px;
+            font-size: 12px; color: #585b70;
         }
-        .nav-links a:hover { background: #363652; }
     </style>
 </head>
 <body>
-<div class="topbar">
-    <h1>asset-agent</h1>
-    <span class="tag">整合看板</span>
-</div>
-
-<div class="main">
-    <div class="hero">
-        <h2>三位智能体，三个视图</h2>
-        <p>多智能体协作质量管理工具。结构视图回答"谁在做事"，演化视图回答"做得怎么样"，审计视图回答"花得值不值"。</p>
+    <div class="top">
+        <h1>asset-agent</h1>
+        <span class="badge">整合原型</span>
     </div>
 
-    <div class="section-title">三个视图</div>
-    <div class="views">
-        <div class="view-card">
-            <span class="status done">已建成</span>
-            <h3>结构视图</h3>
-            <p>仓库目录树 + 角色 badge。谁管 docs、谁管 src、谁管 test，一目了然。</p>
-            <div class="source">来源：qtcloud-asset</div>
+    <div class="main">
+        <div class="intro">
+            <h2>智能体协作质量看板</h2>
+            <p>三个视图回答三个问题：谁在做事、做得怎么样、花得值不值。</p>
+            <div class="count">
+                <div>已建成视图 <span>3</span></div>
+                <div>智能体角色 <span>3</span></div>
+                <div>协作边类型 <span>3</span></div>
+            </div>
         </div>
-        <div class="view-card">
-            <span class="status done">已建成</span>
-            <h3>演化视图</h3>
-            <p>版本网格 + 触发/反馈连线。一轮功能迭代了几版、瓶颈在哪、收敛没有。</p>
-            <div class="source">来源：qtcloud-asset</div>
+
+        <div class="section-label">三个视图</div>
+        <div class="views">
+            <a class="view" href="https://github.com/quanttide/qtcloud-asset/tree/main/examples/asset-agent/src/index.html" target="_blank">
+                <div class="icon">📁</div>
+                <div class="body">
+                    <h3>结构视图 <span class="status status-done">已建成</span></h3>
+                    <p>仓库目录树 + 角色 badge，谁管什么一目了然。</p>
+                </div>
+                <div class="arrow">→</div>
+            </a>
+            <a class="view" href="https://github.com/quanttide/qtcloud-asset/tree/main/examples/asset-agent/src/evolution.html" target="_blank">
+                <div class="icon">⏳</div>
+                <div class="body">
+                    <h3>演化视图 <span class="status status-done">已建成</span></h3>
+                    <p>版本网格 + 触发/反馈连线，迭代了几轮、瓶颈在哪、收敛没有。</p>
+                </div>
+                <div class="arrow">→</div>
+            </a>
+            <a class="view" href="https://github.com/quanttide/qtcloud-agent/tree/main/examples/asset-agent/audit.html" target="_blank">
+                <div class="icon">🔍</div>
+                <div class="body">
+                    <h3>审计视图 <span class="status status-done">已建成</span></h3>
+                    <p>token 消耗与浪费率、边界检查、每文件引用状态。</p>
+                </div>
+                <div class="arrow">→</div>
+            </a>
         </div>
-        <div class="view-card">
-            <span class="status done">已建成</span>
-            <h3>审计视图</h3>
-            <p>每次调用的 token 消耗、浪费率、边界检查。加载的文件有没有用、有没有越权。</p>
-            <div class="source">来源：qtcloud-agent</div>
+
+        <div class="section-label">设计原则</div>
+        <div class="principles">
+            <div class="principle"><div class="n">01</div><p>减法优先：能用一个视图解决的问题不用两个</p></div>
+            <div class="principle"><div class="n">02</div><p>独立迭代：每个智能体维护自己的版本线，版本号不必一致</p></div>
+            <div class="principle"><div class="n">03</div><p>收敛即定稿：所有路径不再产生新反馈时视为收敛</p></div>
+            <div class="principle"><div class="n">04</div><p>零配置：HTML 双击打开即可，无需构建步骤</p></div>
         </div>
     </div>
 
-    <div class="section-title">架构</div>
-    <div class="arch">
-        <pre>
-                         ┌──────────────┐
-                         │   事件总线    │
-                         └──────┬───────┘
-                                │
-                   ┌────────────┼────────────┐
-                   ▼            ▼            ▼
-           ┌──────────┐ ┌──────────┐ ┌──────────┐
-           │ 版本追踪  │ │ 审计日志  │ │ 边界配置  │
-           └────┬─────┘ └────┬─────┘ └────┬─────┘
-                │             │            │
-                ▼             ▼            ▼
-           ┌───────────────────────────────────┐
-           │          渲染层                   │
-           │  ┌─────────┐ ┌─────────┐ ┌──────┐ │
-           │  │ 结构树   │ │ 演化图   │ │审计表│ │
-           │  │(分工)   │ │(过程)   │ │(成本)│ │
-           │  └─────────┘ └─────────┘ └──────┘ │
-           └───────────────────────────────────┘
-        </pre>
+    <div class="bottom">
+        qtcloud-asset / qtcloud-agent · 双仓库协作验证
     </div>
-
-    <div class="section-title">构建状态</div>
-    <table class="gap-table">
-        <tr><th>子系统</th><th>状态</th><th>来源</th></tr>
-        <tr><td>结构树</td><td class="yes">✅ 已建成</td><td>qtcloud-asset</td></tr>
-        <tr><td>演化图</td><td class="yes">✅ 已建成</td><td>qtcloud-asset</td></tr>
-        <tr><td>审计面板</td><td class="yes">✅ 已建成</td><td>qtcloud-agent</td></tr>
-        <tr><td>边界配置</td><td class="yes">✅ 已建成</td><td>qtcloud-agent</td></tr>
-        <tr><td>规则引擎</td><td class="wip">🔧 设计中</td><td>—</td></tr>
-        <tr><td>事件总线</td><td class="no">📋 待建</td><td>—</td></tr>
-        <tr><td>统一渲染壳</td><td class="no">📋 待建</td><td>—</td></tr>
-    </table>
-
-    <div class="section-title" style="margin-top:40px">设计原则</div>
-    <div class="principles">
-        <div class="principle"><div class="num">01</div><p>减法优先：能用一个视图解决的问题不用两个</p></div>
-        <div class="principle"><div class="num">02</div><p>数据驱动：统一事件源，各视图按需消费</p></div>
-        <div class="principle"><div class="num">03</div><p>独立迭代：智能体各自维护版本线，不假设同步推进</p></div>
-        <div class="principle"><div class="num">04</div><p>收敛即定稿：所有路径无活跃反馈时标记收敛</p></div>
-    </div>
-</div>
 </body>
 </html>
