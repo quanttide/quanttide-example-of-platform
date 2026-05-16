@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'blocs/intent_sync_bloc.dart';
 import 'screens/home_screen.dart';
+import 'services/opencode_service.dart';
 
 void main() {
   runApp(const ThinkAgentApp());
@@ -12,10 +13,20 @@ class ThinkAgentApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => IntentSyncBloc(
-        initialDocumentContent: _defaultIntentDoc,
-      ),
+    final ocService = OpenCodeService(
+      host: '127.0.0.1',
+      port: 4096,
+    );
+    return MultiBlocProvider(
+      providers: [
+        RepositoryProvider.value(value: ocService),
+        BlocProvider(
+          create: (_) => IntentSyncBloc(
+            initialDocumentContent: _defaultIntentDoc,
+            openCodeService: ocService,
+          ),
+        ),
+      ],
       child: MaterialApp(
         title: '意图澄清工具',
         debugShowCheckedModeBanner: false,

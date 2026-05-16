@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../services/opencode_service.dart';
 
 sealed class IntentSyncState {
   final String documentContent;
@@ -57,11 +58,15 @@ class UserSendMessage extends IntentSyncEvent {
 }
 
 class IntentSyncBloc extends Bloc<IntentSyncEvent, IntentSyncState> {
+  final OpenCodeService _oc;
   Completer<void>? _syncCompleter;
   bool _isSyncing = false;
 
-  IntentSyncBloc({required String initialDocumentContent})
-      : super(Aligned(documentContent: initialDocumentContent)) {
+  IntentSyncBloc({
+    required String initialDocumentContent,
+    OpenCodeService? openCodeService,
+  })  : _oc = openCodeService ?? OpenCodeService(),
+        super(Aligned(documentContent: initialDocumentContent)) {
     on<AiEditFile>(_onAiEditFile);
     on<HumanEditSave>(_onHumanEditSave);
     on<HumanReviewConfirm>(_onHumanReviewConfirm);
@@ -139,8 +144,7 @@ class IntentSyncBloc extends Bloc<IntentSyncEvent, IntentSyncState> {
   void _startImplicitSync(String content) {
     if (_isSyncing) return;
     _isSyncing = true;
-    final systemMessage = _buildSyncMessage(content);
-    _sendToAi(systemMessage).then((_) {
+    _sendToAi(content).then((_) {
       add(const SyncComplete());
     }).catchError((error) {
       _isSyncing = false;
@@ -158,8 +162,20 @@ $content
 请基于此意图文档继续对话。''';
   }
 
-  Future<void> _sendToAi(String message) async {
-    await Future.delayed(const Duration(milliseconds: 100));
+  Future<void> _sendToAi(String content) async {
+    final message = _buildSyncMessage(content);
+    final appended = await _oc.appendPrompt(message);
+    if (!appended) {
+      _oc.showToast(
+        message: '隐式同步失败，将在下一轮消息中附加意图文档',
+        variant: 'warning',
+      );
+      throw Exception('appendPrompt failed');
+    }
+    final submitted = await _oc.submitPrompt();
+    if (!submitted) {
+      throw Exception('submitPrompt failed');
+    }
   }
 
   Future<void> _waitForSync() async {

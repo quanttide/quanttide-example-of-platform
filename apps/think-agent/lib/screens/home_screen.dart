@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _fileService!.onFileChanged = (content) {
       context.read<IntentSyncBloc>().add(AiEditFile(content));
     };
+    _fileService!.watch();
   }
 
   void _onIntentChanged(IntentModel model) {
