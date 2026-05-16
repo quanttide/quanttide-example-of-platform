@@ -9,7 +9,7 @@
 ├── checkpoint.ts            # A2: 检查点
 ├── verification.ts          # A3: 自检
 └── audit.ts                 # R5: 审计日志
-.process/
+.quanttide/code/
 ├── understanding.json       # 当前理解（AI 输出）
 ├── checkpoints/             # 检查点记录
 ├── audit.jsonl              # 审计日志
@@ -125,7 +125,7 @@ tool: {
       risks: tool.schema.array(tool.schema.string()).describe("可能理解错的地方"),
     },
     async execute(args, ctx) {
-      await Bun.write(".process/understanding.json", JSON.stringify(args, null, 2))
+      await Bun.write(".quanttide/code/understanding.json", JSON.stringify(args, null, 2))
       return "理解已记录，等待确认后开始执行"
     },
   }),
@@ -149,7 +149,7 @@ tool: {
 
 ### 确认机制
 
-用户通过 `question` 工具或文件系统确认（`.process/understanding.json` 中设 `confirmed: true`）。
+用户通过 `question` 工具或文件系统确认（`.quanttide/code/understanding.json` 中设 `confirmed: true`）。
 
 ## A2: 检查点
 
@@ -171,7 +171,7 @@ tool: {
     next: inferNext(input.tool, input.args),
     changes: [],
   }
-  await Bun.write(`.process/checkpoints/${String(id).padStart(3, "0")}.json`, JSON.stringify(cp, null, 2))
+  await Bun.write(`.quanttide/code/checkpoints/${String(id).padStart(3, "0")}.json`, JSON.stringify(cp, null, 2))
 }
 ```
 
@@ -201,7 +201,7 @@ tool: {
     async execute(args, ctx) {
       const understanding = await loadUnderstanding()
       // 自动对比 args.checks 与 understanding.criteria
-      await Bun.write(".process/verification.json", JSON.stringify({
+      await Bun.write(".quanttide/code/verification.json", JSON.stringify({
         ...args,
         checkedAgainst: understanding,
       }, null, 2))
@@ -253,7 +253,7 @@ ${checkpoints[checkpoints.length - 1]?.next || "待定"}
     tool: input.tool,
     args: input.args,
   }
-  await $`echo ${JSON.stringify(entry)} >> .process/audit.jsonl`
+  await $`echo ${JSON.stringify(entry)} >> .quanttide/code/audit.jsonl`
 }
 ```
 
@@ -283,10 +283,10 @@ mkdir -p .opencode/plugins
 4. **实现 checkpoint.ts** — A2 `tool.execute.after` 钩子
 5. **实现 verification.ts** — A3 自定义工具
 6. **实现 audit.ts** — R5 审计钩子
-7. **创建 `.process/` 数据目录**
+7. **创建 `.quanttide/code/` 数据目录**
 
 ```
-.process/   ← gitignore
+.quanttide/code/   ← gitignore
 ```
 
 8. **启动 Opencode 验证**
