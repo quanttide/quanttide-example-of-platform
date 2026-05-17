@@ -19,10 +19,10 @@ from app.models import Role
 from app.storage import Storage
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="connect-agent REPL")
     parser.add_argument("--data", default="data.json", help="数据文件路径")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     storage = Storage(args.data)
     conv = Conversation(storage)
@@ -122,4 +122,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(argv=sys.argv[1:])

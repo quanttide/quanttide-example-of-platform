@@ -100,8 +100,9 @@ class TestStorage:
         s = Storage(self.path)
         assert s.list_messages() == []
 
-    def test_corrupted_file(self) -> None:
+    def test_corrupted_file_returns_empty(self) -> None:
         with open(self.path, "w") as f:
             f.write("{invalid")
         s = Storage(self.path)
         assert s.list_messages() == []
+        assert s.list_consensuses() == []

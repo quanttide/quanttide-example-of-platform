@@ -1,13 +1,32 @@
-"""测试命令层与事件总线。"""
+"""测试命令层：补全 EventHandler 协议分支和边界。"""
 
 from app.commands import Conversation, EventBus
-from app.events import DomainEvent
+from app.events import DomainEvent, EventHandler
 from app.models import Role
 from app.storage import Storage
 
 
+class _EventHandlerImpl:
+    """实现 EventHandler 协议（有 .handle 方法）的测试桩。"""
+
+    def __init__(self) -> None:
+        self.events: list[DomainEvent] = []
+
+    def handle(self, event: DomainEvent) -> None:
+        self.events.append(event)
+
+
 class TestEventBus:
-    def test_publish(self) -> None:
+    def test_publish_with_protocol_handler(self) -> None:
+        """注册 EventHandler 协议对象 → 走 h.handle(event) 分支。"""
+        bus = EventBus()
+        handler = _EventHandlerImpl()
+        bus.register(handler)
+        bus.publish(_Event("msg-1"))
+        assert len(handler.events) == 1
+
+    def test_publish_with_callable(self) -> None:
+        """注册普通 callable → 走 else h(event) 分支。"""
         bus = EventBus()
         received: list[DomainEvent] = []
 
@@ -15,15 +34,29 @@ class TestEventBus:
             received.append(event)
 
         bus.register(handler)
-        bus.publish(MessageSentFixture("mid", "hi", "user"))
+        bus.publish(_Event("msg-2"))
         assert len(received) == 1
 
+    def test_publish_multiple_handlers(self) -> None:
+        """多个 handler 都收到事件。"""
+        bus = EventBus()
+        h1 = _EventHandlerImpl()
+        h2 = _EventHandlerImpl()
 
-class MessageSentFixture(DomainEvent):
-    def __init__(self, mid: str, content: str, role: str) -> None:
-        self.message_id = mid
-        self.content = content
-        self.role = role
+        def h3(event: DomainEvent) -> None:
+            pass
+
+        bus.register(h1)
+        bus.register(h2)
+        bus.register(h3)
+        bus.publish(_Event("x"))
+        assert len(h1.events) == 1
+        assert len(h2.events) == 1
+
+
+class _Event(DomainEvent):
+    def __init__(self, message_id: str) -> None:
+        self.message_id = message_id
 
 
 class TestConversation:
@@ -51,7 +84,6 @@ class TestConversation:
         msg = self.conv.send_message("你好", Role.user)
         assert msg.content == "你好"
         assert msg.role == Role.user
-        # 事件
         assert any(
             e.message_id == msg.id for e in self.events if hasattr(e, "message_id")
         )
@@ -77,7 +109,6 @@ class TestConversation:
 
     def test_propose_with_invalid_message(self) -> None:
         c = self.conv.propose_consensus("测试", ["nonexistent"])
-        # 不存在的消息不会创建 relation
         rels = self.storage.get_relations_for_consensus(c.id)
         assert len(rels) == 0
 
