@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品研发工作流 - 低保真原型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            color: #1a1a1a;
+            line-height: 1.5;
+            padding: 20px;
+        }
+        .page {
+            background: #ffffff;
+            border: 1px solid #ccc;
+            margin-bottom: 30px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .page-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-weight: 600;
+            font-size: 1em;
+            margin-bottom: 10px;
+            border-left: 3px solid #999;
+            padding-left: 10px;
+            color: #444;
+        }
+        .card {
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+        .card-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .col {
+            flex: 1;
+            min-width: 150px;
+        }
+        .kanban-column {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            min-height: 120px;
+            background: #fdfdfd;
+        }
+        .kanban-column-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+        }
+        .kanban-card {
+            border: 1px solid #bbb;
+            padding: 8px;
+            margin-bottom: 6px;
+            background: #fff;
+            font-size: 0.9em;
+        }
+        .kanban-card .meta {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 4px;
+        }
+        .btn-placeholder {
+            display: inline-block;
+            border: 1px solid #888;
+            padding: 5px 12px;
+            background: #eee;
+            font-size: 0.85em;
+            color: #333;
+            text-align: center;
+        }
+        .tag {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            border-radius: 3px;
+            color: #333;
+        }
+        .divider {
+            border-top: 1px solid #e0e0e0;
+            margin: 20px 0;
+        }
+        .feedback-arrow {
+            font-size: 0.8em;
+            color: #666;
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        .collapsed {
+            color: #999;
+            font-style: italic;
+        }
+        .inline-link {
+            color: #555;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== 产品描述页 ==================== -->
+<div class="page">
+    <div class="page-title">产品描述页</div>
+
+    <!-- 产品头部 -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div>
+            <strong style="font-size: 1.3em;">产品名称：数据通</strong>
+            <div style="color:#555; margin-top:5px;">一句话价值：一键打通数据孤岛，报表自动生成</div>
+        </div>
+        <span class="tag">阶段：已发布</span>
+    </div>
+
+    <!-- 价值演进快照 -->
+    <div class="card" style="background:#f9f9f9;">
+        <div class="card-label">价值演进快照</div>
+        <div>原始吐槽："每次都要手动导出再导入分析工具" → 核心事例：运营人员一键同步，2小时缩短至5分钟 → 当前产品介绍：一键打通数据孤岛，报表自动生成</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 需求起源 -->
+    <div class="section">
+        <div class="section-title">▼ 需求起源</div>
+        <div class="card">
+            <div><strong>用户原始吐槽：</strong></div>
+            <div style="margin:5px 0; padding-left:15px; color:#444;">"每次都要手动导出数据再导入到分析工具，太麻烦了。"</div>
+            <div class="collapsed" style="margin-top:8px;">📁 临时需求文档 [折叠] <span style="font-size:0.8em;">(已归档，仅存档)</span></div>
+            <div class="collapsed" style="padding-left:20px;">└─ BRD摘要：建立自动数据同步通道...</div>
+        </div>
+    </div>
+
+    <!-- 事例与验证 -->
+    <div class="section">
+        <div class="section-title">▼ 事例与验证</div>
+        <div class="card">
+            <div><strong>关键事例描述：</strong></div>
+            <div style="padding-left:15px; color:#444;">某运营人员需要每周生成分析报告，通过本产品一键完成数据同步，将2小时工作缩短为5分钟。</div>
+            <div style="margin-top:10px;">
+                <span>原型代码：</span>
+                <span class="inline-link">[链接]</span>
+                <span class="inline-link">[运行截图]</span>
+            </div>
+            <div style="margin-top:8px;">
+                <span class="tag" style="background:#d4edda; color:#155724;">✓ 验证结论：核心价值已跑通</span>
+                <span style="margin-left:10px; font-size:0.85em; color:#555;">验证人：张三 | 日期：2026-05-10</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 平台能力描述 -->
+    <div class="section">
+        <div class="section-title">▼ 平台能力描述</div>
+        <div class="card">
+            <div><strong>产品介绍：</strong>"一键打通数据孤岛，报表自动生成"</div>
+            <div style="margin-top:10px;"><strong>核心能力清单：</strong></div>
+            <ul style="padding-left:20px; margin:5px 0; color:#444;">
+                <li>数据源连接器 (支持A/B/C)</li>
+                <li>自动同步调度</li>
+                <li>报表模板引擎</li>
+            </ul>
+            <div style="margin-top:8px;"><strong>事例对应关系：</strong></div>
+            <div style="padding-left:15px; font-size:0.9em; color:#555;">
+                事例步骤"数据导出" → 数据源连接器<br>
+                事例步骤"分析报表" → 报表模板引擎
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 项目看板页 ==================== -->
+<div class="page">
+    <div class="page-title">项目看板页 <span style="font-size:0.8em; font-weight:normal; margin-left:15px;">产品切换：数据通 ▾</span></div>
+
+    <!-- 探索期 -->
+    <div class="section">
+        <div class="section-title">探索期 · 目标：产出可验证的原型</div>
+        <div class="row">
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">需求池</div>
+                    <div class="kanban-card">
+                        吐槽A：手动导出太慢
+                        <div class="meta">王五 · 2天前</div>
+                    </div>
+                    <div class="kanban-card">
+                        想法B：定时邮件报表
+                        <div class="meta">李四 · 1天前</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">梳理临时文档</div>
+                    <div class="kanban-card">
+                        BRD草稿：数据同步需求
+                        <div class="meta">李四 · 进行中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">编写事例</div>
+                    <div class="kanban-card">
+                        下单事例
+                        <div class="meta">待编写</div>
+                    </div>
+                    <div class="kanban-card">
+                        退款事例
+                        <div class="meta">AI辅助生成中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">完整应用 (原型)</div>
+                    <div class="kanban-card">
+                        原型代码包 v0.3
+                        <div class="meta">已构建 · 可运行</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column" style="border-color:#4caf50;">
+                    <div class="kanban-column-title">验证通过</div>
+                    <div class="kanban-card" style="background:#f0faf0;">
+                        验证报告：通过✓
+                        <div class="meta">核心价值确认</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: right; margin-top: 10px;">
+            <span class="btn-placeholder">转入整合 →</span>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 整合期 -->
+    <div class="section">
+        <div class="section-title">整合期 · 目标：交付平台能力</div>
+        <div class="row">
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">代码重构</div>
+                    <div class="kanban-card">
+                        拆分模块
+                        <div class="meta">进行中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">底层测试</div>
+                    <div class="kanban-card">
+                        单元测试
+                        <div class="meta">覆盖率 80%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">高层测试</div>
+                    <div class="kanban-card">
+                        API测试
+                        <div class="meta">2/5 通过</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">生成文档</div>
+                    <div class="kanban-card">
+                        接口文档
+                        <div class="meta">进行中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kanban-column">
+                    <div class="kanban-column-title">发布</div>
+                    <div class="kanban-card">
+                        v1.0 发布
+                        <div class="meta">待办</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="feedback-arrow">←── 反馈回路：测试失败可回到探索期"完整应用"列重新调整原型</div>
+    </div>
+</div>
+
+<!-- ==================== 版本交付页 ==================== -->
+<div class="page">
+    <div class="page-title">版本交付页</div>
+
+    <!-- 版本历史 -->
+    <div class="section">
+        <div class="section-title">版本历史 (倒序)</div>
+
+        <!-- v1.1.0 -->
+        <div class="card">
+            <div style="display:flex; justify-content: space-between;">
+                <strong>v1.1.0</strong>
+                <span class="tag">最新</span>
+            </div>
+            <div style="font-size:0.9em; color:#555; margin:5px 0;">发布日期：2026-05-15</div>
+            <div>产品介绍："一键打通数据孤岛，报表自动生成"</div>
+
+            <div style="margin-top:12px;"><strong>制品清单：</strong></div>
+            <div style="padding-left:15px; font-size:0.9em;">
+                <div>📦 正式代码包 <span class="inline-link">[下载]</span></div>
+                <div>📄 精确平台文档 <span class="inline-link">[在线浏览]</span> <span class="inline-link">[PDF]</span></div>
+                <div>📊 测试报告 (覆盖率92%, 全部通过)</div>
+                <div>📝 产品介绍文档 <span class="inline-link">[查看]</span></div>
+            </div>
+
+            <div style="margin-top:8px; font-size:0.85em; color:#777;">
+                源自原型：v0.3-prototype <span class="inline-link">[追溯链接]</span><br>
+                一致性验证：✓ 文档与代码行为一致 (2026-05-14)
+            </div>
+        </div>
+
+        <!-- v1.0.0 -->
+        <div class="card">
+            <strong>v1.0.0</strong>
+            <div style="font-size:0.9em; color:#555; margin:5px 0;">发布日期：2026-05-01</div>
+            <div>产品介绍："报表自动生成MVP"</div>
+
+            <div style="margin-top:12px;"><strong>制品清单：</strong></div>
+            <div style="padding-left:15px; font-size:0.9em;">
+                <div>📦 正式代码包 <span class="inline-link">[下载]</span></div>
+                <div>📄 精确平台文档 <span class="inline-link">[在线浏览]</span> <span class="inline-link">[PDF]</span></div>
+                <div>📊 测试报告 (覆盖率85%, 全部通过)</div>
+                <div>📝 产品介绍文档 <span class="inline-link">[查看]</span></div>
+            </div>
+
+            <div style="margin-top:8px; font-size:0.85em; color:#777;">
+                源自原型：v0.2-prototype <span class="inline-link">[追溯链接]</span><br>
+                一致性验证：✓ 文档与代码行为一致 (2026-04-30)
+            </div>
+        </div>
+    </div>
+
+    <!-- 资产对比 -->
+    <div class="section">
+        <div class="section-title">资产对比</div>
+        <div class="card">
+            <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+                <span>选择版本A：<select><option>v1.0.0</option><option>v1.1.0</option></select></span>
+                <span>选择版本B：<select><option>v1.1.0</option><option>v1.0.0</option></select></span>
+                <span class="btn-placeholder">开始对比</span>
+            </div>
+            <div style="margin-top:10px; font-size:0.9em;">
+                <strong>差异摘要：</strong><br>
+                · 新增模块：数据源连接器<br>
+                · 测试覆盖率：85% → 92%
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 共创板 (客户视角) ==================== -->
+<div class="page">
+    <div class="page-title">共创板 · 产品演进路线图 <span style="font-size:0.8em; font-weight:normal; margin-left:15px;">产品：数据通 ▾</span></div>
+
+    <!-- 当前产品能力 -->
+    <div class="section">
+        <div class="section-title">▼ 当前产品能力 (已发布)</div>
+        <div class="card">
+            <strong>v1.1.0</strong> "一键打通数据孤岛，报表自动生成"
+            <ul style="padding-left:20px; margin:8px 0; color:#444;">
+                <li>数据源连接器 (支持A/B/C)</li>
+                <li>自动同步调度</li>
+                <li>报表模板引擎</li>
+            </ul>
+            <span class="inline-link">[查看完整介绍]</span>
+        </div>
+    </div>
+
+    <!-- 正在探索的方向 -->
+    <div class="section">
+        <div class="section-title">▼ 正在探索的方向</div>
+        <div class="card">
+            <span class="tag" style="background:#fff3cd; color:#856404;">🔍 假设</span>
+            <strong>"用户需要定时发送报表到邮箱"</strong>
+            <div style="font-size:0.9em; margin:8px 0; color:#555;">描述：很多用户在报表生成后还要手动发邮件，我们正在验证自动发送这个场景。</div>
+            <div>状态：事例验证中 | 预计：若验证通过，预计v1.2.0提供</div>
+            <div style="margin-top:8px;">
+                <span class="inline-link">[查看事例演示]</span>
+                <span class="inline-link">[投票支持]</span>
+                <span class="inline-link">[补充场景]</span>
+            </div>
+        </div>
+        <div class="card">
+            <span class="tag" style="background:#e2e3e5; color:#383d41;">💡 想法</span>
+            <strong>"支持手机端查看报表"</strong>
+            <div style="font-size:0.9em; margin:8px 0; color:#555;">描述：管理者经常在手机上查看数据，需要移动端适配。</div>
+            <div>状态：收集反馈中 (需要更多场景支持)</div>
+            <div style="margin-top:8px;">
+                <span class="inline-link">[投票支持]</span>
+                <span class="inline-link">[描述你的场景]</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 即将发布 (整合中) -->
+    <div class="section">
+        <div class="section-title">▼ 即将发布 (整合中)</div>
+        <div class="card">
+            <span class="tag" style="background:#d1ecf1; color:#0c5460;">🔧 整合中</span>
+            <strong>"数据源支持D系统"</strong>
+            <div style="font-size:0.9em; margin:5px 0; color:#555;">描述：对接D系统的数据导入</div>
+            <div>状态：稳定性提升中 | 预计：v1.2.0</div>
+        </div>
+    </div>
+
+    <!-- 你的声音 -->
+    <div class="section">
+        <div class="section-title">▼ 你的声音</div>
+        <div class="card">
+            <textarea placeholder="输入你的想法或吐槽..." style="width:100%; height:60px; border:1px solid #ccc; padding:8px; font-family:inherit;"></textarea>
+            <div style="margin-top:8px;"><span class="btn-placeholder">提交</span></div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
