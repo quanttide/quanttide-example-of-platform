@@ -10,8 +10,10 @@ import os
 import tempfile
 
 import pytest
-from app.commands import Conversation
 from app.storage import Storage
+from quanttide_connect.services.consensus import ConsensusService
+from quanttide_connect.services.message import MessageService
+from quanttide_connect.services.relation import RelationService
 
 
 @pytest.fixture(scope="session")
@@ -40,9 +42,18 @@ def live_storage() -> Storage:
 
 
 @pytest.fixture
-def live_conversation(live_storage: Storage) -> Conversation:
-    """基于真实存储的 Conversation。"""
-    return Conversation(live_storage)
+def live_msg_svc(live_storage: Storage) -> MessageService:
+    return MessageService(live_storage)
+
+
+@pytest.fixture
+def live_con_svc(live_storage: Storage) -> ConsensusService:
+    return ConsensusService(live_storage)
+
+
+@pytest.fixture
+def live_rel_svc(live_storage: Storage) -> RelationService:
+    return RelationService(live_storage)
 
 
 @pytest.fixture
@@ -55,8 +66,10 @@ def live_msg_agent(live_config):
 
 
 @pytest.fixture
-def live_con_agent(live_conversation: Conversation):
+def live_con_agent(
+    live_storage: Storage, live_con_svc: ConsensusService, live_rel_svc: RelationService
+):
     """连接真实 DeepSeek API 的共识智能体。"""
     from app.agents.consensus_agent import ConsensusAgent
 
-    return ConsensusAgent(live_conversation)
+    return ConsensusAgent(live_storage, live_con_svc, live_rel_svc)

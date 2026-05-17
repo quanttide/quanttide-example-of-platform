@@ -1,7 +1,7 @@
 """测试 SQLite 存储层。"""
 
-from app.models import Consensus, ConsensusStatus, Message, Relation, Role
 from app.storage import Storage
+from quanttide_connect.models import Consensus, ConsensusStatus, Message, Relation, Role
 
 
 class TestStorage:

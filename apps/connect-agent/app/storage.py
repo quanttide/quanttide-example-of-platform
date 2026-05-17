@@ -10,7 +10,7 @@ import sqlite3
 from datetime import datetime, timezone
 from typing import Any
 
-from app.models import Consensus, ConsensusStatus, Message, Relation
+from quanttide_connect.models import Consensus, ConsensusStatus, Message, Relation
 
 
 def _utcnow() -> str:

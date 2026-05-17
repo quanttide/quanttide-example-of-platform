@@ -10,11 +10,11 @@ import os
 import tempfile
 
 import pytest
-from app.events import EventBus
-from app.services.consensus import ConsensusService
-from app.services.message import MessageService
-from app.services.relation import RelationService
 from app.storage import Storage
+from quanttide_connect.events import EventBus
+from quanttide_connect.services.consensus import ConsensusService
+from quanttide_connect.services.message import MessageService
+from quanttide_connect.services.relation import RelationService
 
 
 @pytest.fixture

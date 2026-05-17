@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from app.models import Consensus, ConsensusStatus, Message, Relation, Role
+from quanttide_connect.models import Consensus, ConsensusStatus, Message, Relation, Role
 
 
 class TestMessage:

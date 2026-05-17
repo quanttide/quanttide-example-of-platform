@@ -9,10 +9,11 @@ from __future__ import annotations
 import json
 import re
 
+from quanttide_connect.models import ConsensusStatus, Message
+from quanttide_connect.services.consensus import ConsensusService
+from quanttide_connect.services.relation import RelationService
+
 from app.config import settings
-from app.models import ConsensusStatus, Message
-from app.services.consensus import ConsensusService
-from app.services.relation import RelationService
 from app.storage import Storage
 
 CONSENSUS_SYSTEM_PROMPT = """你是 connect-agent 的共识智能体（System 2 — 慢思考）。

@@ -12,12 +12,13 @@ from __future__ import annotations
 import argparse
 import shlex
 
+from quanttide_connect.models import Role
+from quanttide_connect.services.consensus import ConsensusService
+from quanttide_connect.services.message import MessageService
+from quanttide_connect.services.relation import RelationService
+
 from app.agents.consensus_agent import ConsensusAgent
 from app.agents.message_agent import MessageAgent
-from app.models import Role
-from app.services.consensus import ConsensusService
-from app.services.message import MessageService
-from app.services.relation import RelationService
 from app.storage import Storage
 
 

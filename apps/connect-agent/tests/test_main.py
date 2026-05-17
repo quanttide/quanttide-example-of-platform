@@ -113,7 +113,7 @@ class TestMainRepl:
     ) -> None:
         """/messages 显示消息列表。"""
         mock_store_instance = mock_store.return_value
-        from app.models import Message, Role
+        from quanttide_connect.models import Message, Role
 
         mock_store_instance.list_messages.return_value = [
             Message(content="hello", role=Role.user)
@@ -133,7 +133,7 @@ class TestMainRepl:
         self, mock_con: MagicMock, mock_msg: MagicMock, mock_store: MagicMock
     ) -> None:
         """/consensuses 显示共识列表。"""
-        from app.models import Consensus
+        from quanttide_connect.models import Consensus
 
         mock_store_instance = mock_store.return_value
         mock_store_instance.list_consensuses.return_value = [
@@ -155,7 +155,7 @@ class TestMainRepl:
         self, mock_con: MagicMock, mock_msg: MagicMock, mock_store: MagicMock
     ) -> None:
         """/confirm 成功则显示确认信息。"""
-        from app.models import Consensus
+        from quanttide_connect.models import Consensus
 
         mock_storage_instance = mock_store.return_value
         mock_storage_instance.update_consensus_status.return_value = (
@@ -197,7 +197,9 @@ class TestMainRepl:
         with patch("builtins.input", side_effect=["你好", "/history", "/quit"]):
             with patch("builtins.print") as mock_print:
                 main(argv=[])
-                all_output = " ".join(str(c[0][0]) for c in mock_print.call_args_list if c[0])
+                all_output = " ".join(
+                    str(c[0][0]) for c in mock_print.call_args_list if c[0]
+                )
                 assert "你好" in all_output
                 assert "回复内容" in all_output
 
@@ -208,7 +210,7 @@ class TestMainRepl:
         self, mock_con: MagicMock, mock_msg: MagicMock, mock_store: MagicMock
     ) -> None:
         """/deprecate 成功则显示确认信息。"""
-        from app.models import Consensus
+        from quanttide_connect.models import Consensus
 
         mock_storage_instance = mock_store.return_value
         mock_storage_instance.update_consensus_status.return_value = (
@@ -264,7 +266,7 @@ class TestMainRepl:
     ) -> None:
         """/messages 显示消息内容。"""
         mock_store_instance = mock_store.return_value
-        from app.models import Message, Role
+        from quanttide_connect.models import Message, Role
 
         mock_store_instance.list_messages.return_value = [
             Message(content="测试消息内容", role=Role.user)
@@ -284,7 +286,7 @@ class TestMainRepl:
         self, mock_con: MagicMock, mock_msg: MagicMock, mock_store: MagicMock
     ) -> None:
         """/consensuses 显示有关联的共识。"""
-        from app.models import Consensus, Relation
+        from quanttide_connect.models import Consensus, Relation
 
         mock_store_instance = mock_store.return_value
         mock_store_instance.list_consensuses.return_value = [

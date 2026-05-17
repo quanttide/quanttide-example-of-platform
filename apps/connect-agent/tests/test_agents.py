@@ -4,10 +4,10 @@ from unittest.mock import MagicMock, patch
 
 from app.agents.consensus_agent import ConsensusAgent
 from app.agents.message_agent import MessageAgent
-from app.models import ConsensusStatus, Role
-from app.services.consensus import ConsensusService
-from app.services.relation import RelationService
 from app.storage import Storage
+from quanttide_connect.models import ConsensusStatus, Role
+from quanttide_connect.services.consensus import ConsensusService
+from quanttide_connect.services.relation import RelationService
 
 
 class TestMessageAgent:
@@ -165,7 +165,7 @@ related_messages: []
                     }
                 ]
             }
-            from app.models import Message
+            from quanttide_connect.models import Message
 
             user_msg = Message(content="我们用 PostgreSQL", role=Role.user)
             agent_msg = Message(content="好的", role=Role.agent)
@@ -187,7 +187,7 @@ related_messages: []
             mock_post.return_value.json.return_value = {
                 "choices": [{"message": {"content": "[NO_ACTION]"}}]
             }
-            from app.models import Message
+            from quanttide_connect.models import Message
 
             user_msg = Message(content="今天天气不错", role=Role.user)
             agent_msg = Message(content="是啊", role=Role.agent)

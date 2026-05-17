@@ -1,11 +1,11 @@
 """测试服务层和事件总线。"""
 
-from app.events import EventBus
-from app.models import Role
-from app.services.consensus import ConsensusService
-from app.services.message import MessageService
-from app.services.relation import RelationService
 from app.storage import Storage
+from quanttide_connect.events import EventBus
+from quanttide_connect.models import Role
+from quanttide_connect.services.consensus import ConsensusService
+from quanttide_connect.services.message import MessageService
+from quanttide_connect.services.relation import RelationService
 
 
 class _Handler:
