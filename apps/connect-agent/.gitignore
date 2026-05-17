@@ -9,5 +9,10 @@ venv/
 venv.bak/
 .python-version
 *.egg-info/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
 dist/
 build/
