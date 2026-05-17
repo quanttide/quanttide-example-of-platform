@@ -23,6 +23,8 @@
 | `docs/connect-agent/add.md` | 双智能体架构设计 |
 | `docs/connect-agent/drd-models.md` | 数据需求文档 - 模型 |
 | `docs/connect-agent/drd-events.md` | 数据需求文档 - 命令与事件 |
+| `docs/test-strategy.md` | 测试策略（单元测试与集成测试设计） |
+| `docs/test-cases.md` | 测试用例清单（输入、步骤、断言追溯） |
 
 ## 工作纪律
 
