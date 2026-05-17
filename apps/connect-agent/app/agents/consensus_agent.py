@@ -9,9 +9,11 @@ from __future__ import annotations
 import json
 import re
 
-from app.commands import Conversation
 from app.config import settings
 from app.models import ConsensusStatus, Message
+from app.services.consensus import ConsensusService
+from app.services.relation import RelationService
+from app.storage import Storage
 
 CONSENSUS_SYSTEM_PROMPT = """你是 connect-agent 的共识智能体（System 2 — 慢思考）。
 
@@ -47,8 +49,15 @@ related_messages: ["消息ID1", "消息ID2"]
 class ConsensusAgent:
     """异步观察对话、提炼共识的智能体。"""
 
-    def __init__(self, conversation: Conversation) -> None:
-        self.conversation = conversation
+    def __init__(
+        self,
+        storage: Storage,
+        consensus_svc: ConsensusService,
+        relation_svc: RelationService,
+    ) -> None:
+        self.storage = storage
+        self.consensus_svc = consensus_svc
+        self.relation_svc = relation_svc
         self.api_key = settings.llm_api_key.get_secret_value()
         self.base_url = "https://api.deepseek.com"
 
@@ -58,10 +67,8 @@ class ConsensusAgent:
         """观察一轮对话，判断是否需要操作共识。"""
         import requests
 
-        confirmed = self.conversation.storage.list_consensuses(
-            ConsensusStatus.confirmed
-        )
-        proposed = self.conversation.storage.list_consensuses(ConsensusStatus.proposed)
+        confirmed = self.storage.list_consensuses(ConsensusStatus.confirmed)
+        proposed = self.storage.list_consensuses(ConsensusStatus.proposed)
 
         ctx = f"## 本轮用户消息\n{user_message.content}\n\n## 本轮 AI 回复\n{agent_message.content}\n\n"
         if confirmed:
@@ -101,10 +108,8 @@ class ConsensusAgent:
         self._handle_instructions(output)
 
     def _handle_instructions(self, output: str) -> None:
-        """解析结构化指令并执行。"""
         if "[NO_ACTION]" in output or "[/CONSENSUS_ACTION]" not in output:
             return
-
         blocks = re.findall(
             r"\[CONSENSUS_ACTION\](.*?)\[/CONSENSUS_ACTION\]", output, re.DOTALL
         )
@@ -135,26 +140,27 @@ class ConsensusAgent:
         act = action.get("action")
         content = action.get("content", "")
         related = action.get("related_messages", [])
-        conv = self.conversation
+        con_svc = self.consensus_svc
+        rel_svc = self.relation_svc
 
         if act == "propose" and content:
-            c = conv.propose_consensus(content, related)
+            c = con_svc.propose(content, related)
             print(f"[共识] 提议: {c.content[:60]}... (id: {c.id})")
 
         elif act == "confirm":
-            proposed = conv.storage.list_consensuses(ConsensusStatus.proposed)
+            proposed = self.storage.list_consensuses(ConsensusStatus.proposed)
             for pc in proposed:
                 if content and content in pc.content:
-                    conv.confirm_consensus(pc.id)
+                    con_svc.confirm(pc.id)
                     print(f"[共识] 确认: {pc.content[:60]}...")
                     return
             print(f"[共识] 确认指令未匹配到待确认的共识: {content[:40]}...")
 
         elif act == "deprecate":
-            confirmed = conv.storage.list_consensuses(ConsensusStatus.confirmed)
+            confirmed = self.storage.list_consensuses(ConsensusStatus.confirmed)
             for cc in confirmed:
                 if content and content in cc.content:
-                    conv.deprecate_consensus(cc.id)
+                    con_svc.deprecate(cc.id)
                     print(f"[共识] 废弃: {cc.content[:60]}...")
                     return
             print(f"[共识] 废弃指令未匹配到已确认的共识: {content[:40]}...")

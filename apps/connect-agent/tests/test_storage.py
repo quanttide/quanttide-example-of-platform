@@ -1,4 +1,4 @@
-"""测试 JSON 存储层。"""
+"""测试 SQLite 存储层。"""
 
 from app.models import Consensus, ConsensusStatus, Message, Relation, Role
 from app.storage import Storage
@@ -70,22 +70,10 @@ class TestStorage:
         assert len(storage.get_relations_for_message("m1")) == 2
         assert len(storage.get_relations_for_message("m2")) == 1
 
-    def test_persistence(self, storage: Storage, tmp_path: str) -> None:
+    def test_persistence(self, tmp_path: str) -> None:
         msg = Message(content="persistent", role=Role.user)
+        storage = Storage(tmp_path)
         storage.add_message(msg)
         storage2 = Storage(tmp_path)
         assert len(storage2.list_messages()) == 1
         assert storage2.get_message(msg.id).content == "persistent"
-
-    def test_empty_file_handling(self, tmp_path: str) -> None:
-        with open(tmp_path, "w") as f:
-            f.write("")
-        s = Storage(tmp_path)
-        assert s.list_messages() == []
-
-    def test_corrupted_file_returns_empty(self, tmp_path: str) -> None:
-        with open(tmp_path, "w") as f:
-            f.write("{invalid")
-        s = Storage(tmp_path)
-        assert s.list_messages() == []
-        assert s.list_consensuses() == []

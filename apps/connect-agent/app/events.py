@@ -1,11 +1,10 @@
 """
-领域事件：代表已经发生的事实。
-
-命名统一为过去式，对应 DRD-events 定义。
+领域事件与事件总线。
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Protocol
 
@@ -73,3 +72,20 @@ class MessageUnlinkedFromConsensus(DomainEvent):
 
 class EventHandler(Protocol):
     def handle(self, event: DomainEvent) -> None: ...
+
+
+class EventBus:
+    """事件总线。"""
+
+    def __init__(self) -> None:
+        self._handlers: list[EventHandler | Callable[[DomainEvent], None]] = []
+
+    def register(self, handler: EventHandler | Callable[[DomainEvent], None]) -> None:
+        self._handlers.append(handler)
+
+    def publish(self, event: DomainEvent) -> None:
+        for h in self._handlers:
+            if hasattr(h, "handle"):
+                h.handle(event)
+            else:
+                h(event)

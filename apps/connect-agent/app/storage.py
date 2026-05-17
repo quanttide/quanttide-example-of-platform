@@ -1,146 +1,167 @@
 """
-JSON 文件存储层。
+SQLite 存储层。
 
-将 Message、Consensus、Relation 持久化到单个 JSON 文件，
-满足 DRD "可直接映射为 JSON 文件"的要求。
+Message、Consensus、Relation 各存为独立表，共用单个 SQLite 数据库文件。
 """
 
 from __future__ import annotations
 
-import json
+import sqlite3
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from app.models import Consensus, ConsensusStatus, Message, Relation
 
 
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+def _utcnow() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+DB_PATH = "connect.db"
 
 
 class Storage:
-    """JSON 文件存储，三表合一。"""
+    """SQLite 文件存储，三表共用。"""
 
-    def __init__(self, path: str | Path = "data.json") -> None:
-        self.path = Path(path)
-        self._messages: list[dict[str, Any]] = []
-        self._consensuses: list[dict[str, Any]] = []
-        self._relations: list[dict[str, Any]] = []
-        self._load()
+    def __init__(self, path: str = DB_PATH) -> None:
+        self._db = sqlite3.connect(path)
+        self._db.row_factory = sqlite3.Row
+        self._init_tables()
 
-    # ---- 内部序列化 ----
+    def _init_tables(self) -> None:
+        self._db.executescript("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                role TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS consensuses (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'proposed',
+                created_at TEXT NOT NULL,
+                updated_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS relations (
+                id TEXT PRIMARY KEY,
+                message_id TEXT NOT NULL,
+                consensus_id TEXT NOT NULL
+            );
+        """)
 
-    def _load(self) -> None:
-        if self.path.exists():
-            text = self.path.read_text().strip()
-            if text:
-                try:
-                    raw = json.loads(text)
-                except json.JSONDecodeError:
-                    self._messages = []
-                    self._consensuses = []
-                    self._relations = []
-                    return
-                self._messages = raw.get("messages", [])
-                self._consensuses = raw.get("consensuses", [])
-                self._relations = raw.get("relations", [])
-        else:
-            self._messages = []
-            self._consensuses = []
-            self._relations = []
+    def _to_message(self, row: sqlite3.Row) -> Message:
+        return Message(**dict(row))
 
-    def _save(self) -> None:
-        self.path.write_text(
-            json.dumps(
-                {
-                    "messages": self._messages,
-                    "consensuses": self._consensuses,
-                    "relations": self._relations,
-                },
-                indent=2,
-                default=str,
-            )
-        )
+    def _to_consensus(self, row: sqlite3.Row) -> Consensus:
+        return Consensus(**dict(row))
+
+    def _to_relation(self, row: sqlite3.Row) -> Relation:
+        return Relation(**dict(row))
 
     # ---- Message ----
 
     def add_message(self, msg: Message) -> Message:
-        self._messages.append(msg.model_dump(mode="json"))
-        self._save()
+        d = msg.model_dump(mode="json")
+        self._db.execute(
+            "INSERT INTO messages (id, content, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (d["id"], d["content"], d["role"], d["created_at"], d.get("updated_at")),
+        )
+        self._db.commit()
         return msg
 
     def get_message(self, message_id: str) -> Message | None:
-        for d in self._messages:
-            if d["id"] == message_id:
-                return Message(**d)
-        return None
+        row = self._db.execute(
+            "SELECT * FROM messages WHERE id = ?", (message_id,)
+        ).fetchone()
+        return self._to_message(row) if row else None
 
     def list_messages(self) -> list[Message]:
-        return [Message(**d) for d in self._messages]
+        return [
+            self._to_message(r)
+            for r in self._db.execute(
+                "SELECT * FROM messages ORDER BY created_at"
+            ).fetchall()
+        ]
 
     def update_message(self, message_id: str, new_content: str) -> Message | None:
-        for d in self._messages:
-            if d["id"] == message_id:
-                d["content"] = new_content
-                now = _utcnow()
-                d["updated_at"] = now.isoformat()
-                self._save()
-                return Message(**d)
-        return None
+        cur = self._db.execute(
+            "UPDATE messages SET content = ?, updated_at = ? WHERE id = ?",
+            (new_content, _utcnow(), message_id),
+        )
+        self._db.commit()
+        if cur.rowcount == 0:
+            return None
+        return self.get_message(message_id)
 
     # ---- Consensus ----
 
     def add_consensus(self, c: Consensus) -> Consensus:
-        self._consensuses.append(c.model_dump(mode="json"))
-        self._save()
+        d = c.model_dump(mode="json")
+        self._db.execute(
+            "INSERT INTO consensuses (id, content, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (d["id"], d["content"], d["status"], d["created_at"], d.get("updated_at")),
+        )
+        self._db.commit()
         return c
 
     def get_consensus(self, consensus_id: str) -> Consensus | None:
-        for d in self._consensuses:
-            if d["id"] == consensus_id:
-                return Consensus(**d)
-        return None
+        row = self._db.execute(
+            "SELECT * FROM consensuses WHERE id = ?", (consensus_id,)
+        ).fetchone()
+        return self._to_consensus(row) if row else None
 
     def list_consensuses(
         self, status: ConsensusStatus | None = None
     ) -> list[Consensus]:
-        result = [Consensus(**d) for d in self._consensuses]
         if status:
-            result = [c for c in result if c.status == status]
-        return result
+            rows = self._db.execute(
+                "SELECT * FROM consensuses WHERE status = ? ORDER BY created_at",
+                (status.value,),
+            ).fetchall()
+        else:
+            rows = self._db.execute(
+                "SELECT * FROM consensuses ORDER BY created_at"
+            ).fetchall()
+        return [self._to_consensus(r) for r in rows]
 
     def update_consensus_status(
         self, consensus_id: str, status: ConsensusStatus
     ) -> Consensus | None:
-        for d in self._consensuses:
-            if d["id"] == consensus_id:
-                d["status"] = status.value
-                now = _utcnow()
-                d["updated_at"] = now.isoformat()
-                self._save()
-                return Consensus(**d)
-        return None
+        cur = self._db.execute(
+            "UPDATE consensuses SET status = ?, updated_at = ? WHERE id = ?",
+            (status.value, _utcnow(), consensus_id),
+        )
+        self._db.commit()
+        if cur.rowcount == 0:
+            return None
+        return self.get_consensus(consensus_id)
 
     # ---- Relation ----
 
     def add_relation(self, r: Relation) -> Relation:
-        self._relations.append(r.model_dump(mode="json"))
-        self._save()
+        d = r.model_dump(mode="json")
+        self._db.execute(
+            "INSERT INTO relations (id, message_id, consensus_id) VALUES (?, ?, ?)",
+            (d["id"], d["message_id"], d["consensus_id"]),
+        )
+        self._db.commit()
         return r
 
     def remove_relation(self, relation_id: str) -> bool:
-        before = len(self._relations)
-        self._relations = [r for r in self._relations if r["id"] != relation_id]
-        if len(self._relations) < before:
-            self._save()
-            return True
-        return False
+        cur = self._db.execute("DELETE FROM relations WHERE id = ?", (relation_id,))
+        self._db.commit()
+        return cur.rowcount > 0
 
     def get_relations_for_consensus(self, consensus_id: str) -> list[Relation]:
-        return [
-            Relation(**r) for r in self._relations if r["consensus_id"] == consensus_id
-        ]
+        rows = self._db.execute(
+            "SELECT * FROM relations WHERE consensus_id = ?", (consensus_id,)
+        ).fetchall()
+        return [self._to_relation(r) for r in rows]
 
     def get_relations_for_message(self, message_id: str) -> list[Relation]:
-        return [Relation(**r) for r in self._relations if r["message_id"] == message_id]
+        rows = self._db.execute(
+            "SELECT * FROM relations WHERE message_id = ?", (message_id,)
+        ).fetchall()
+        return [self._to_relation(r) for r in rows]

@@ -18,7 +18,7 @@ def _utcnow() -> datetime:
 
 
 def _new_id() -> str:
-    return uuid.uuid4().hex[:12]
+    return uuid.uuid4().hex
 
 
 class Role(str, Enum):

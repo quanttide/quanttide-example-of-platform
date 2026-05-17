@@ -4,7 +4,7 @@ connect-agent — 人机沟通共识引擎
 基于双智能体架构（System 1 + System 2），从对话中自动提炼并维护共识。
 
 运行方式：
-    uv run python main.py [--data PATH]
+    uv run python -m app.main
 """
 
 from __future__ import annotations
@@ -14,20 +14,24 @@ import shlex
 
 from app.agents.consensus_agent import ConsensusAgent
 from app.agents.message_agent import MessageAgent
-from app.commands import Conversation
 from app.models import Role
+from app.services.consensus import ConsensusService
+from app.services.message import MessageService
+from app.services.relation import RelationService
 from app.storage import Storage
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="connect-agent REPL")
-    parser.add_argument("--data", default="data.json", help="数据文件路径")
+    parser.add_argument("--data", default="connect.db", help="SQLite 数据库路径")
     args = parser.parse_args(argv)
 
     storage = Storage(args.data)
-    conv = Conversation(storage)
+    msg_svc = MessageService(storage)
+    con_svc = ConsensusService(storage)
+    rel_svc = RelationService(storage)
     msg_agent = MessageAgent()
-    con_agent = ConsensusAgent(conv)
+    con_agent = ConsensusAgent(storage, con_svc, rel_svc)
 
     history: list[dict] = []
 
@@ -44,7 +48,6 @@ def main(argv: list[str] | None = None) -> None:
         if not raw:
             continue
 
-        # ---- 内置命令 ----
         if raw.startswith("/"):
             parts = shlex.split(raw)
             cmd = parts[0].lower()
@@ -76,14 +79,14 @@ def main(argv: list[str] | None = None) -> None:
                         print(f"         ↳ 消息: {msg_ids}")
 
             elif cmd == "/confirm" and len(parts) >= 2:
-                c = conv.confirm_consensus(parts[1])
+                c = con_svc.confirm(parts[1])
                 if c:
                     print(f"已确认共识 [{c.id[:8]}]: {c.content[:60]}...")
                 else:
                     print("未找到该共识")
 
             elif cmd == "/deprecate" and len(parts) >= 2:
-                c = conv.deprecate_consensus(parts[1])
+                c = con_svc.deprecate(parts[1])
                 if c:
                     print(f"已废弃共识 [{c.id[:8]}]: {c.content[:60]}...")
                 else:
@@ -98,8 +101,7 @@ def main(argv: list[str] | None = None) -> None:
 
             continue
 
-        # ---- 正常对话 ----
-        user_msg = conv.send_message(raw, Role.user)
+        user_msg = msg_svc.send(raw, Role.user)
         history.append({"role": "user", "content": raw})
 
         print("  [消息智能体思考中...]", end=" ", flush=True)
@@ -111,7 +113,7 @@ def main(argv: list[str] | None = None) -> None:
         reply_text = msg_agent.reply(raw, history[:-1], confirmed)
         print("✓")
 
-        agent_msg = conv.send_message(reply_text, Role.agent)
+        agent_msg = msg_svc.send(reply_text, Role.agent)
         history.append({"role": "assistant", "content": reply_text})
 
         print(f"  {reply_text}")

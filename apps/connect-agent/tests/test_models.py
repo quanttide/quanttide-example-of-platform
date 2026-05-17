@@ -11,7 +11,7 @@ class TestMessage:
         assert msg.content == "你好"
         assert msg.role == Role.user
         assert isinstance(msg.id, str)
-        assert len(msg.id) == 12
+        assert len(msg.id) == 32
         assert isinstance(msg.created_at, datetime)
 
     def test_default_role(self) -> None:

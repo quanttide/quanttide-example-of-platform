@@ -30,7 +30,7 @@ def live_config():
 @pytest.fixture
 def live_storage() -> Storage:
     """集成测试用的临时存储。"""
-    tmp = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
     path = tmp.name
     tmp.close()
     storage = Storage(path)
