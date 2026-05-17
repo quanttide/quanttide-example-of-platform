@@ -12,6 +12,8 @@ uv run python -m app.main
 
 ## 测试
 
-```bash
-uv run pytest -v
-```
+| 类别 | 命令 | 说明 |
+|------|------|------|
+| 单元测试 | `uv run pytest tests/` | 77 个，99% 覆盖率，无外部依赖 |
+| 集成测试 | `uv run pytest integration_tests/` | 4 个，需 Vault + DeepSeek API |
+| 覆盖率 | `uv run pytest --cov=app tests/` | |
